@@ -1,0 +1,10 @@
+__pycache__
+.DS_Store
+config.py
+token.pickle
+.ipynb_checkpoints/
+stream/10day/nov
+stream/stocks/
+stream/tweets/
+get-pip.py
+test.py
