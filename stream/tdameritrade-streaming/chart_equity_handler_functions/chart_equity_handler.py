@@ -79,15 +79,22 @@ def equity_chart_handler(msg):
 
             
             # If cash available greater than desired savings? 
-            if cash_available >=24000: #1% of initial balance
+            if cash_available >=25500: #1% of initial balance
                 
                 
-                # Define the buy price as the last minute's (live df) open price
-                buy_price = round(live['CLOSE_PRICE'][0],2)
+                 # Define the buy price as the last minute's (live df) open price
+                buy_price = live['CLOSE_PRICE'][0]
+                buy_prc = buy_price*1
+                
+                print('bp1:', buy_price)
+                print('bp2:',buy_prc)
+                
+                buy_prc = round(buy_prc,2)
+                print('round bp:', buy_prc)
                 
                 
                 # Get number of shares to buy from dollar amount willing to risk per trade
-                quantity = floor(150/buy_price)
+                quantity = floor(50/buy_prc)
                 
                 
                 
@@ -96,24 +103,23 @@ def equity_chart_handler(msg):
                 
                 # Define ROI
                 
-                roi = 0.008
+                roi = 0.01
                 
                 
-                
-                
+               
                 
                 # Define desired profit per trade
                 profit = 1 + roi
                 
                 # Define acceptable loss per trade
-                loss = 1 - (roi*2)
+                loss = 1 - (roi/2)
                 
                 
                 # Define sell price from buy price * desired profit
-                sell_price = round(buy_price*profit,2)
+                sell_price = round(buy_prc*profit,2)
                 
                 # Define loss price from buy price * acceptable loss
-                loss_price = round(buy_price*loss,2)
+                loss_price = round(buy_prc*loss,2)
                 
                 
                 # Define symbol
@@ -124,9 +130,10 @@ def equity_chart_handler(msg):
                     
                     data = {
                         'quantity':quantity,
-                        'price': buy_price,
+                        'price': buy_prc,
                         'time': trig_time,
-                        'sell_at':buy_price*profit,
+                        'sell_at':buy_prc*profit,
+                        'lose_at':buy_prc*loss,
                         'symbol':symbol
                         } 
                     send(data)
@@ -134,8 +141,8 @@ def equity_chart_handler(msg):
                     
                     # Print quantity placed to be bought
                     print('       quantity: {}       '.format(quantity))
-                    print('       bought: $ {}       '.format(buy_price))
-                    print('       sell at: {}        '.format(buy_price*profit))
+                    print('       bought: $ {}       '.format(buy_prc))
+                    print('       sell at: {}        '.format(buy_prc*profit))
                     print('_________________________________________________________________________________________')
 
 
@@ -148,13 +155,15 @@ def equity_chart_handler(msg):
                                'Content-Type':'application/json'}
                     
                     
+                    print('bp:',buy_prc)
                     # Define buy/sell json for posting to td ameritrade
                     payload = {
                       "orderStrategyType": "TRIGGER",
                       "session": "NORMAL",
                       "duration": "DAY",
-                      "orderType": "LIMIT",
-                      "price": buy_price,
+                      "orderType": "STOP_LIMIT",
+                      "stopPrice": round(buy_price*0.993,2),
+                      "price": round(buy_price*1.0007,2),
                       "orderLegCollection": [
                         {
                           "instruction": "BUY",
