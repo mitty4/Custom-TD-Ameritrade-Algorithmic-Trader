@@ -25,7 +25,6 @@ async def read_stream():
     
     stream_client.add_chart_equity_handler(equity_chart_handler)
     
-#     get_acct(client, config, print)
 
     while True:
         await stream_client.handle_message()

@@ -79,23 +79,41 @@ def equity_chart_handler(msg):
 
             
             # If cash available greater than desired savings? 
-            if cash_available >=23000: #1% of initial balance
+            if cash_available >=24000: #1% of initial balance
                 
                 
                 # Define the buy price as the last minute's (live df) open price
-                buy_price = round(live['OPEN_PRICE'][0],2)
+                buy_price = round(live['CLOSE_PRICE'][0],2)
                 
                 
                 # Get number of shares to buy from dollar amount willing to risk per trade
                 quantity = floor(150/buy_price)
                 
                 
+                
+                
+                # ____________________ -----------   ROI  ----------- ________________________ #
+                
+                # Define ROI
+                
+                roi = 0.008
+                
+                
+                
+                
+                
                 # Define desired profit per trade
-                profit = 1.0019
+                profit = 1 + roi
+                
+                # Define acceptable loss per trade
+                loss = 1 - (roi*2)
                 
                 
                 # Define sell price from buy price * desired profit
                 sell_price = round(buy_price*profit,2)
+                
+                # Define loss price from buy price * acceptable loss
+                loss_price = round(buy_price*loss,2)
                 
                 
                 # Define symbol
@@ -132,42 +150,67 @@ def equity_chart_handler(msg):
                     
                     # Define buy/sell json for posting to td ameritrade
                     payload = {
-                      "orderType": "MARKET",
-                      "session": "NORMAL",
-#                       "price": buy_price,
-                      "duration": "DAY",
                       "orderStrategyType": "TRIGGER",
+                      "session": "NORMAL",
+                      "duration": "DAY",
+                      "orderType": "LIMIT",
+                      "price": buy_price,
                       "orderLegCollection": [
                         {
                           "instruction": "BUY",
                           "quantity": quantity,
                           "instrument": {
-                            "symbol": symbol,
-                            "assetType": "EQUITY"
+                            "assetType": "EQUITY",
+                            "symbol": symbol
                           }
                         }
                       ],
                       "childOrderStrategies": [
                         {
-                          "orderType": "LIMIT",
-                          "session": "NORMAL",
-                          "price": sell_price,
-                          "duration": "GOOD_TILL_CANCEL",
-                          "orderStrategyType": "SINGLE",
-                          "orderLegCollection": [
+                          "orderStrategyType": "OCO",
+                          "childOrderStrategies": [
                             {
-                              "instruction": "SELL",
-                              "quantity": quantity,
-                              "instrument": {
-                                "symbol": symbol,
-                                "assetType": "EQUITY"
-                              }
+                              "orderStrategyType": "SINGLE",
+                              "session": "NORMAL",
+                              "duration": "GOOD_TILL_CANCEL",
+                              "orderType": "LIMIT",
+                              "price": sell_price,
+                              "orderLegCollection": [
+                                {
+                                  "instruction": "SELL",
+                                  "quantity": quantity,
+                                  "instrument": {
+                                    "assetType": "EQUITY",
+                                    "symbol": symbol
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "orderStrategyType": "SINGLE",
+                              "session": "NORMAL",
+                              "duration": "GOOD_TILL_CANCEL",
+                              "orderType": "STOP",
+                              "stopPrice": loss_price,
+                              "orderLegCollection": [
+                                {
+                                  "instruction": "SELL",
+                                  "quantity": quantity,
+                                  "instrument": {
+                                    "assetType": "EQUITY",
+                                    "symbol": symbol 
+                                   }
+                                }
+                              ]
                             }
                           ]
                         }
                       ]
                     }
-        
+                    
+                    
+                    
+                    
         
                     # POST request to BUY and SELL contingently
                     content = requests.post(url=endpoint, json=payload, headers=header)
@@ -211,6 +254,49 @@ def equity_chart_handler(msg):
         
         
 
+        
+        
+        
+        
+# the old payload for a trigger buy without the one cancels the other        
+        
+#  # Define buy/sell json for posting to td ameritrade
+#                     payload = {
+#                       "orderType": "MARKET",
+#                       "session": "NORMAL",
+# #                       "price": buy_price,
+#                       "duration": "DAY",
+#                       "orderStrategyType": "TRIGGER",
+#                       "orderLegCollection": [
+#                         {
+#                           "instruction": "BUY",
+#                           "quantity": quantity,
+#                           "instrument": {
+#                             "symbol": symbol,
+#                             "assetType": "EQUITY"
+#                           }
+#                         }
+#                       ],
+#                       "childOrderStrategies": [
+#                         {
+#                           "orderType": "LIMIT",
+#                           "session": "NORMAL",
+#                           "price": sell_price,
+#                           "duration": "GOOD_TILL_CANCEL",
+#                           "orderStrategyType": "SINGLE",
+#                           "orderLegCollection": [
+#                             {
+#                               "instruction": "SELL",
+#                               "quantity": quantity,
+#                               "instrument": {
+#                                 "symbol": symbol,
+#                                 "assetType": "EQUITY"
+#                               }
+#                             }
+#                           ]
+#                         }
+#                       ]
+#                     }
         
         
         
