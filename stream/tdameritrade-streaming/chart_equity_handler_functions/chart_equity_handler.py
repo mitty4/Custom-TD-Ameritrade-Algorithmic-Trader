@@ -7,6 +7,7 @@ from chart_equity_handler_functions.condition import trigger
 from chart_equity_handler_functions.orders import get_orders
 from chart_equity_handler_functions.cash_available import get_cash_available, get_acct, get_cash
 from chart_equity_handler_functions.sms import send
+# from chart_equity_handler_functions.test_handler import sym
 
 from tda.client import Client
 
@@ -16,6 +17,7 @@ from df import get_df
 from five_days import date_by_subtracting_business_days
 from six_minutes import date_by_subtracting_minutes
 import config
+
 
 
 import json
@@ -30,7 +32,31 @@ import pandas as pd
 import numpy as np
 
 
+import settings
+
+
+def test_handler2(msg):
+#     print(json.dumps(msg, indent=4))
+#     print('run handler2')
+    
+    for sym in msg['content']:
+#         print(sym['key'])
+        symbol = sym['key']
+        if 'ASK_PRICE' in sym:
+#             print(sym['ASK_PRICE'])
+            ask_price = sym['ASK_PRICE']
+            settings.myDict[symbol] = ask_price
+#     print(settings.myDict)
+
+#         settings.myList.append({'symbol':sym,'ask_price':ask_price})
+#     print(settings.myList)
+    
+
+
+
+
 def equity_chart_handler(msg):
+#     print(settings.myList)
     
 #     data = {
 #     'quantity':10,
@@ -39,12 +65,82 @@ def equity_chart_handler(msg):
 #     'sell_at':6.96,
 #     'symbol':'KO'
 #     }
-    
+
 #     send(data)
     #iterate over tickers 
     print(get_cash(client, config))
     for i,ticker in enumerate(msg['content']):
+#         print(i)
+#         if i > -1:
+#             print(settings.myDict[ticker['key']])
+
+# ________________testing________________________________________________________________________________
         
+        
+#         symbol = ticker['key']
+#         #see orders for that symbol
+#         print(json.dumps(get_orders(client, config, symbol).json(), indent=4))
+        
+#         six_ago = date_by_subtracting_minutes(datetime.now(), 6)
+#         six_min_orders = client.get_orders_by_query(symbol,from_entered_datetime=six_ago).json()
+#         print('________-\n',json.dumps(six_min_orders, indent=4))
+        
+#         for order in orders:
+#             if order['transactionItem']['instruction'] == 'BUY':
+#                 buy_p = order['transactionItem']['price']
+        
+        
+#         # Define the params for the post request
+#         auth = pickle.load( open( config.TOKEN_PATH, "rb" ) )
+#         token = auth['access_token']
+#         endpoint = 'https://api.tdameritrade.com/v1/accounts/277582772/orders'
+#         header = {'Authorization': 'Bearer {}'.format(token),
+#                    'Content-Type':'application/json'}
+
+
+#         # Define buy/sell json for posting to td ameritrade
+#         payload = {
+#           "orderStrategyType": "SINGLE",
+#           "session": "NORMAL",
+#           "duration": "DAY",
+#           "price": 4.88,
+#           "orderType": "LIMIT",
+#           "orderLegCollection": [
+#             {
+#               "instruction": "SELL",
+#               "quantity": 1,
+#               "instrument": {
+#                 "assetType": "EQUITY",
+#                 "symbol": symbol
+#               }
+#             }
+#           ]
+#         }
+
+
+
+
+
+#         # POST request to BUY and SELL contingently
+# #         content = requests.post(url=endpoint, json=payload, headers=header)
+#         print(content.status_code)
+#         print(content.raise_for_status())
+#         six_ago = date_by_subtracting_minutes(datetime.now(), 6)
+#         six_min_orders = client.get_orders_by_query(from_entered_datetime=six_ago).json()
+#         print(json.dumps(six_min_orders, indent=4))
+#         # Make sound when trigger occurs
+#         print("\a","\a")
+
+
+#         #see orders for that symbol
+#         get_orders(client, config, symbol)
+        
+        
+        
+# ________________________________________________________________________________________________
+
+
+
     
         # Get live dataframe to search for triggers
         live = pd.DataFrame.from_dict(ticker, orient="index").T 
@@ -69,9 +165,9 @@ def equity_chart_handler(msg):
             print('\n_____________________***__   {} TRIGGER {}    __***_____________________'.format(ticker['key'],trig_time))
             
             
-            # Get orders from six minutes ago
-            six_ago = date_by_subtracting_minutes(datetime.now(), 6)
-            six_min_orders = client.get_orders_by_query(from_entered_datetime=six_ago).json()
+#             # Get orders from six minutes ago
+#             six_ago = date_by_subtracting_minutes(datetime.now(), 6)
+#             six_min_orders = client.get_orders_by_query(from_entered_datetime=six_ago).json()
           
         
             # Get cash available for trading
@@ -91,6 +187,10 @@ def equity_chart_handler(msg):
                 
                 buy_prc = round(buy_prc,2)
                 print('round bp:', buy_prc)
+                
+
+                buy_prc = round(settings.myDict[ticker['key']],2)
+
                 
                 
                 # Get number of shares to buy from dollar amount willing to risk per trade
@@ -153,17 +253,20 @@ def equity_chart_handler(msg):
                     endpoint = 'https://api.tdameritrade.com/v1/accounts/277582772/orders'
                     header = {'Authorization': 'Bearer {}'.format(token),
                                'Content-Type':'application/json'}
+
                     
                     
-                    print('bp:',buy_prc)
-                    # Define buy/sell json for posting to td ameritrade
+                    
+                    
+# _______________________________________________________________________________________________________________                    
+                    
+                    
                     payload = {
                       "orderStrategyType": "TRIGGER",
                       "session": "NORMAL",
                       "duration": "DAY",
-                      "orderType": "STOP_LIMIT",
-                      "stopPrice": round(buy_price*0.993,2),
-                      "price": round(buy_price*1.0007,2),
+                      "orderType": "LIMIT",
+                      "price": buy_prc,
                       "orderLegCollection": [
                         {
                           "instruction": "BUY",
@@ -220,14 +323,99 @@ def equity_chart_handler(msg):
                     
                     
                     
+                    
+                    
+# _______________________________________________________________________________________________________________
+
+#                     # Define buy/sell json for posting to td ameritrade
+#                     payload = {
+#                       "orderStrategyType": "SINGLE",
+#                       "session": "NORMAL",
+#                       "duration": "DAY",
+#                       "orderType": "MARKET",
+#                       "orderLegCollection": [
+#                         {
+#                           "instruction": "BUY",
+#                           "quantity": quantity,
+#                           "instrument": {
+#                             "assetType": "EQUITY",
+#                             "symbol": symbol
+#                           }
+#                         }
+#                       ]
+#                     }
+                    
+                    
+                    
+                    
         
-                    # POST request to BUY and SELL contingently
+#                     # POST request to BUY and SELL contingently
+#                     content = requests.post(url=endpoint, json=payload, headers=header)
+#                     print(content.status_code)
+#                     print(content.raise_for_status())
+                    
+#                     # Make sound when trigger occurs
+#                     print("\a","\a")
+                    
+                    
+#                     six_ago = date_by_subtracting_minutes(datetime.now(), 6)
+#                     orders = client.get_orders_by_query(from_entered_datetime=six_ago).json()
+#                     print('________-\n',json.dumps(orders, indent=4))
+
+#                     if orders[0]['transactionItem']['instruction'] == 'BUY':
+#                         buy_p = orders[0]['transactionItem']['price']
+        
+        
+        
+#                     # sell order after getting the price of the market buy
+#                     payload = {
+#                         "orderStrategyType": "OCO",
+#                         "childOrderStrategies": [
+#                             {
+#                               "orderType": "LIMIT",
+#                               "session": "NORMAL",
+#                               "price": round(buy_p*profit,2),
+#                               "duration": "DAY",
+#                               "orderStrategyType": "SINGLE",
+#                               "orderLegCollection": [
+#                                 {
+#                                   "instruction": "SELL",
+#                                   "quantity": quantity,
+#                                   "instrument": {
+#                                     "symbol": symbol,
+#                                     "assetType": "EQUITY"
+#                                   }
+#                                 }
+#                               ]
+#                             },
+#                             {
+#                               "orderType": "STOP",
+#                               "session": "NORMAL",
+#                               "stopPrice": round(buy_p*loss,2),
+#                               "duration": "DAY",
+#                               "orderStrategyType": "SINGLE",
+#                               "orderLegCollection": [
+#                                 {
+#                                   "instruction": "SELL",
+#                                   "quantity": quantity,
+#                                   "instrument": {
+#                                     "symbol": symbol,
+#                                     "assetType": "EQUITY"
+#                                   }
+#                                 }
+#                               ]
+#                             }
+#                           ]
+#                         }
+
+                
+                
+# _______________________________________________________________________________________________________________                
+
+                     # POST request to SELL 
                     content = requests.post(url=endpoint, json=payload, headers=header)
                     print(content.status_code)
                     print(content.raise_for_status())
-                    
-                    # Make sound when trigger occurs
-                    print("\a","\a")
                     
                     
                     # Get cash available for trading after transaction 
