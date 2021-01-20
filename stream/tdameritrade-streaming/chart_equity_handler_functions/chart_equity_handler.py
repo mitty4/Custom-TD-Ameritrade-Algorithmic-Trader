@@ -4,6 +4,7 @@ from chart_equity_handler_functions.cash_available import get_cash_available, ge
 from chart_equity_handler_functions.sms import send
 
 from tda.client import Client
+import tda
 
 from client import client
 from tickers import tickers
@@ -12,6 +13,7 @@ from df import get_df
 import config
 
 import json
+import time
 import asyncio
 from datetime import date
 from datetime import datetime
@@ -33,15 +35,34 @@ def test_handler2(msg):
         if 'ASK_PRICE' in sym:
             ask_price = sym['ASK_PRICE']
             settings.myDict[symbol] = ask_price
+    
+
 
 
 
 def equity_chart_handler(msg):
-
+    time.sleep(0.5)
     #iterate over tickers 
     print(get_cash(client, config))
+    
+    
+    # Define ROI
+    # ____________________ -----------   ROI  ----------- ________________________ #
+
+
+    roi = 0.009
+
+
+    # Define desired profit per trade
+    profit = 1 + roi
+
+    # Define acceptable loss per trade
+    loss = 1 - (roi/2.3)
+    
+    
+    
     for i,ticker in enumerate(msg['content']):     
-        
+#         print('last_ask: ',round(settings.myDict[ticker['key']],2))
 # ________________________________________________________________________________________________
 
 
@@ -68,36 +89,26 @@ def equity_chart_handler(msg):
 
             
             # If cash available greater than desired savings? 
-            if cash_available >=25500: #1% of initial balance
+            if cash_available >=20500: #1% of initial balance
                 
                 
                 # Define the buy price as the last minute's (live df) open price
-                buy_prc = round(settings.myDict[ticker['key']],2)
+                if ticker['key'] in settings.myDict:
+                    buy_prc = round(settings.myDict[ticker['key']],2)
 
                 
                 # Get number of shares to buy from dollar amount willing to risk per trade
-                quantity = floor(50/buy_prc)
+                quantity = floor(50/round(live['OPEN_PRICE'][0],2))
                 
-                
-                # Define ROI
-                # ____________________ -----------   ROI  ----------- ________________________ #
-                
-                
-                roi = 0.01
-                
-                
-                # Define desired profit per trade
-                profit = 1 + roi
-                
-                # Define acceptable loss per trade
-                loss = 1 - (roi/2)
+                if quantity <1:
+                    quantity = 1
                 
                 
                 # Define sell price from buy price * desired profit
-                sell_price = round(buy_prc*profit,2)
+#                 sell_price = round(buy_prc*profit,2)
                 
                 # Define loss price from buy price * acceptable loss
-                loss_price = round(buy_prc*loss,2)
+#                 loss_price = round(buy_prc*loss,2)
                 
                 
                 # Define symbol
@@ -106,15 +117,15 @@ def equity_chart_handler(msg):
                 # if the number of shares greater than 1?
                 if quantity>=1:
                     
-                    data = {
-                        'quantity':quantity,
-                        'price': buy_prc,
-                        'time': trig_time,
-                        'sell_at':buy_prc*profit,
-                        'lose_at':buy_prc*loss,
-                        'symbol':symbol
-                        } 
-                    send(data)
+#                     data = {
+#                         'quantity':quantity,
+#                         'price': buy_prc,
+#                         'time': trig_time,
+#                         'sell_at':buy_prc*profit,
+#                         'lose_at':buy_prc*loss,
+#                         'symbol':symbol
+#                         } 
+#                     send(data)
                     print('\a')
                     
                     # Print quantity placed to be bought
@@ -135,65 +146,109 @@ def equity_chart_handler(msg):
                     
                     # _____________________________________________________________________________________________________                    
                     
-                    
                     payload = {
                       "orderStrategyType": "TRIGGER",
                       "session": "NORMAL",
                       "duration": "DAY",
-                      "orderType": "LIMIT",
-                      "price": buy_prc,
+                      "orderType": "MARKET",
+#                       "price": buy_prc,
                       "orderLegCollection": [
                         {
                           "instruction": "BUY",
                           "quantity": quantity,
                           "instrument": {
-                            "assetType": "EQUITY",
-                            "symbol": symbol
+                            "symbol": symbol,
+                            "assetType": "EQUITY"
                           }
                         }
                       ],
-                      "childOrderStrategies": [
-                        {
-                          "orderStrategyType": "OCO",
-                          "childOrderStrategies": [
-                            {
-                              "orderStrategyType": "SINGLE",
-                              "session": "NORMAL",
-                              "duration": "GOOD_TILL_CANCEL",
-                              "orderType": "LIMIT",
-                              "price": sell_price,
-                              "orderLegCollection": [
-                                {
-                                  "instruction": "SELL",
-                                  "quantity": quantity,
-                                  "instrument": {
-                                    "assetType": "EQUITY",
-                                    "symbol": symbol
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "orderStrategyType": "SINGLE",
-                              "session": "NORMAL",
-                              "duration": "GOOD_TILL_CANCEL",
-                              "orderType": "STOP",
-                              "stopPrice": loss_price,
-                              "orderLegCollection": [
-                                {
-                                  "instruction": "SELL",
-                                  "quantity": quantity,
-                                  "instrument": {
-                                    "assetType": "EQUITY",
-                                    "symbol": symbol 
-                                   }
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
+#                       "childOrderStrategies": [
+#                         {
+#                           "orderType": "LIMIT",
+#                           "session": "NORMAL",
+#                           "price": sell_price,
+#                           "duration": "GOOD_TILL_CANCEL",
+#                           "orderStrategyType": "SINGLE",
+#                           "orderLegCollection": [
+#                             {
+#                               "instruction": "SELL",
+#                               "quantity": quantity,
+#                               "instrument": {
+#                                 "symbol": symbol,
+#                                 "assetType": "EQUITY"
+#                               }
+#                             }
+#                           ]
+#                         }
+#                       ]
                     }
+                    
+                    
+                    
+                    
+                     # _____________________________________________________________________________________________________     
+                    
+                    
+                    
+                    
+#                     payload2 = {
+#                       "orderStrategyType": "TRIGGER",
+#                       "session": "NORMAL",
+#                       "duration": "DAY",
+#                       "orderType": "LIMIT",
+#                       "price": buy_prc,
+#                       "orderLegCollection": [
+#                         {
+#                           "instruction": "BUY",
+#                           "quantity": quantity,
+#                           "instrument": {
+#                             "assetType": "EQUITY",
+#                             "symbol": symbol
+#                           }
+#                         }
+#                       ],
+#                       "childOrderStrategies": [
+#                         {
+#                           "orderStrategyType": "OCO",
+#                           "childOrderStrategies": [
+#                             {
+#                               "orderStrategyType": "SINGLE",
+#                               "session": "NORMAL",
+#                               "duration": "GOOD_TILL_CANCEL",
+#                               "orderType": "LIMIT",
+#                               "price": sell_price,
+#                               "orderLegCollection": [
+#                                 {
+#                                   "instruction": "SELL",
+#                                   "quantity": quantity,
+#                                   "instrument": {
+#                                     "assetType": "EQUITY",
+#                                     "symbol": symbol
+#                                   }
+#                                 }
+#                               ]
+#                             },
+#                             {
+#                               "orderStrategyType": "SINGLE",
+#                               "session": "NORMAL",
+#                               "duration": "GOOD_TILL_CANCEL",
+#                               "orderType": "STOP",
+#                               "stopPrice": loss_price,
+#                               "orderLegCollection": [
+#                                 {
+#                                   "instruction": "SELL",
+#                                   "quantity": quantity,
+#                                   "instrument": {
+#                                     "assetType": "EQUITY",
+#                                     "symbol": symbol 
+#                                    }
+#                                 }
+#                               ]
+#                             }
+#                           ]
+#                         }
+#                       ]
+#                     }
                     
                     # _________________________________________________________________________________________________                
 
@@ -210,6 +265,97 @@ def equity_chart_handler(msg):
                     # Print cash available after transaction compared to before
                     print('           ',cash_available,'is now -------->> ',cash_available_after)
 
+                    
+    time.sleep(0.2)
+    # Define the params for the post request
+    auth = pickle.load( open( config.TOKEN_PATH, "rb" ) )
+    token = auth['access_token']
+    endpoint = 'https://api.tdameritrade.com/v1/accounts/277582772/orders'
+    header = {'Authorization': 'Bearer {}'.format(token),
+               'Content-Type':'application/json'}
+
+    #get account with positions
+    data = client.get_account(277582772,fields=Client.Account.Fields.POSITIONS)
+    positions = data.json()
+#         print(json.dumps(positions, indent=4))
+    if 'securitiesAccount' in positions:
+        if 'positions' in positions['securitiesAccount']:
+            data = dict()
+            #check each open position
+            for k in positions['securitiesAccount']['positions']:
+                symbol = k['instrument']['symbol']
+                quantity = round(k['longQuantity'])
+                data['symbol'] = symbol
+    # LOSS _______________________________________________________            
+                # LOSS point of sell
+                if k['averagePrice']*loss*quantity >= k['marketValue']:
+                    print('loss ', symbol, quantity)
+#                     send('loss ', symbol, quantity)
+                    data['WoL'] = 'loss'
+                    send(data)
+                    print(loss,'*buyPrice = ',k['averagePrice']*loss*quantity)
+                    print(k['marketValue'])
+
+
+                    payload = {
+                      "orderType": "MARKET",
+                      "session": "NORMAL",
+                      "duration": "DAY",
+                      "orderStrategyType": "TRIGGER",
+                      "orderLegCollection": [
+                        {
+                          "instruction": "SELL",
+                          "quantity": quantity,
+                          "instrument": {
+                            "symbol": symbol,
+                            "assetType": "EQUITY"
+                          }
+                        }
+                      ],
+                    }
+
+                    # POST request to SELL 
+                    content = requests.post(url=endpoint, json=payload, headers=header)
+                    print(content.status_code)
+                    print(content.raise_for_status())
+
+    # GAIN _______________________________________________________
+                # GAIN point of sell
+                if k['averagePrice']*profit*quantity <= k['marketValue']:
+                    print('money! ', symbol, quantity)
+                    data['WoL'] = 'Money!'
+                    send(data)
+                    print(profit,'*buyPrice = ',k['averagePrice']*profit*quantity)
+                    print(k['marketValue'])
+                    payload = {
+                      "orderType": "MARKET",
+                      "session": "NORMAL",
+                      "duration": "DAY",
+                      "orderStrategyType": "TRIGGER",
+                      "orderLegCollection": [
+                        {
+                          "instruction": "SELL",
+                          "quantity": quantity,
+                          "instrument": {
+                            "symbol": symbol,
+                            "assetType": "EQUITY"
+                          }
+                        }
+                      ],
+                    }
+
+                    # POST request to SELL 
+                    content = requests.post(url=endpoint, json=payload, headers=header)
+                    print(content.status_code)
+                    print(content.raise_for_status())    
+
+
+
+
+
+                    
+                    
+                    
                 
         # If no trigger then what?      
         else:

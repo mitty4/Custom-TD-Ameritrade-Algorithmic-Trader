@@ -24,13 +24,9 @@ def send(data):
     
     # Send message
     message = client.messages.create(
-        body=' buy \n {}, {} shares, ${}, total: ${}, \n Sell at: ${}, \n time: {} \n '
-        .format(data['symbol'],
-                data['quantity'],
-                data['price'],
-                data['quantity']*data['price'],
-                data['sell_at'],
-                data['time']
+        body='-{} \n{}'
+        .format(data['WoL'],
+                data['symbol']
                 ),
         from_='+14324005221',
         to='+19725766149'
