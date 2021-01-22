@@ -1,6 +1,10 @@
 import pandas as pd
 
-def get_df(client, ticker, Client):
+
+## GET HISTORICAL DATA 
+def get_hist_df(client, ticker, Client):
+    
+    ## GET INDIVIDUAL PRICE HISTORY 
     resp = client.get_price_history(ticker['key'],
         period_type=Client.PriceHistory.PeriodType.DAY,
         period=Client.PriceHistory.Period.TEN_DAYS,
@@ -8,12 +12,17 @@ def get_df(client, ticker, Client):
         frequency=Client.PriceHistory.Frequency.EVERY_MINUTE)
     
     
+    ## CONVERT TO PANDAS DF
     df = pd.DataFrame(resp.json()['candles'])
     
     
-    #create open to high column
+    ## CREATE OPEN TO HIGH COLUMN FOR PART OF THE CONDITION
     df['open_high'] = df['high']-df['open']
-    #create open to low column
+    
+    ## CREATE OPEN TO LOW COLUMN FOR PART OF THE CONDITION
     df['open_low'] = df['open']-df['low']
+    
+    
+    
     
     return df

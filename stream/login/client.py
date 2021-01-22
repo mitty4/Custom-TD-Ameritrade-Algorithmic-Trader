@@ -1,13 +1,15 @@
 from tda.auth import easy_client
-from tda.client import Client
 from tda.streaming import StreamClient
 
-import config
+import login.config as config
 
 
 #create the client to talk to td ameritrade
+#initialize a session
 client = easy_client(
-        api_key=config.API_KEY,
-        redirect_uri=config.REDIRECT_URI,
-        token_path=config.TOKEN_PATH)
+    config.API_KEY,
+    config.REDIRECT_URI,
+    config.TOKEN_PATH
+)
+
 stream_client = StreamClient(client, account_id=config.ACCOUNT_ID)

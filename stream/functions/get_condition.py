@@ -1,6 +1,6 @@
 import numpy as np
 
-def trigger(live_df, hist_df):
+def get_condition(live_df, hist_df):
     #define conditions
     
     #define variables
