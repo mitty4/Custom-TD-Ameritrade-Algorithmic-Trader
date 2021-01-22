@@ -53,13 +53,19 @@ def find_trigger(msg):
         ## CHECK IF CONDITION/TRIGGER IS PRESENT
         if get_condition(live, df):
                
+                            
+            ## SET MONEY PER TRADE 
+            per_trade = 50         # <<<<<<<<<<<<
+
+            ## GET QUANTITY OF SHARES TO BUY
+            quantity = floor(per_trade/round(live['OPEN_PRICE'][0],2))
             
             ## DEFINE THE STRING TO PRINT
-            string = '\n      _____________________***__   {} TRIGGER {}    __***_____________________'
+            string = '\n____________________***__  {} TRIGGER t: {}  q: {} lp: ${} __***______________          '
 
             
             ## PRINT THE TRIGGER SYMBOL AND TIME
-            print(string.format(symbol,trig_time))
+            print(string.format(symbol,trig_time, quantity, settings.myDict[symbol]))
 
             
             
@@ -68,13 +74,6 @@ def find_trigger(msg):
             
             ## SET AMOUNT OF $$ TO RISK, 1% of initial balance recommended
             if cash_available >=25500:         # <<<<<<<<<<<< 
-
-                
-                ## SET MONEY PER TRADE 
-                per_trade = 50         # <<<<<<<<<<<<
-                
-                ## GET QUANTITY OF SHARES TO BUY
-                quantity = floor(per_trade/round(live['OPEN_PRICE'][0],2))
                 
                 
                 
@@ -136,7 +135,7 @@ def find_trigger(msg):
                     cash_available_after = get_cash_available(client, config)
 
                     ## PRINT CASH DIFFERENCE AFTER TRADE
-                    print('                ',cash_available,'is now -------->> ',cash_available_after)                    
+                    print('from $'cash_available,' ---->> to $',cash_available_after)                    
                     
                 
                 
@@ -144,7 +143,7 @@ def find_trigger(msg):
         ## IF NO TRIGGER THEN PRINT  
         else:
             no_t = '-----------------------------------------------------------------------no__trigger'
-            print(symbol,trig_time, no_t)
+            print(symbol,trig_time, settings.myDict[symbol], no_t)
             
           
         

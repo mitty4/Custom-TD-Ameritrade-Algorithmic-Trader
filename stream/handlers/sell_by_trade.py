@@ -73,7 +73,8 @@ def sell_by_trade(msg):
                         if p['marketValue']/quantity <= t[2]*loss:
                             
                             ## VISUALIZE THE LOSS
-                            print('                        ...loss')
+                            space = '                             '
+                            print(space,'...loss  q:{}  markVal:{}  lossVal:{}  tradeVal:{}'.format(quantity,t[2]*loss,t[2]))
                             
                             ## SEND TEXT MESSAGE WITH LOSS INFO
                             data['WoL'] = 'Loss'
@@ -118,7 +119,8 @@ def sell_by_trade(msg):
                         if p['marketValue']/quantity <= t[2]*profit:
                             
                             ## VISUALIZE THE PROFIT
-                            print('                        ...profit')
+                            space = '                             '
+                            print(space,'...money! q:{}  markVal:{}  gainVal:{}  tradeVal:{}'.format(quantity,t[2]*profit,t[2]))
                             
                             ## SEND TEXT MESSAGE WITH LOSS INFO
                             data['WoL'] = 'Profit'
