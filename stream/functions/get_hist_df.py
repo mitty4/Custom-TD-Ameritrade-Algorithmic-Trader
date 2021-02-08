@@ -12,17 +12,19 @@ def get_hist_df(client, ticker, Client):
         frequency=Client.PriceHistory.Frequency.EVERY_MINUTE)
     
     
-    ## CONVERT TO PANDAS DF
-    df = pd.DataFrame(resp.json()['candles'])
+    if "candles" in resp.json():
     
+        ## CONVERT TO PANDAS DF
+        df = pd.DataFrame(resp.json()['candles'])
+
+
+        ## CREATE OPEN TO HIGH COLUMN FOR PART OF THE CONDITION
+        df['open_high'] = df['high']-df['open']
+
+        ## CREATE OPEN TO LOW COLUMN FOR PART OF THE CONDITION
+        df['open_low'] = df['open']-df['low']
     
-    ## CREATE OPEN TO HIGH COLUMN FOR PART OF THE CONDITION
-    df['open_high'] = df['high']-df['open']
+        return df
     
-    ## CREATE OPEN TO LOW COLUMN FOR PART OF THE CONDITION
-    df['open_low'] = df['open']-df['low']
-    
-    
-    
-    
-    return df
+    else:
+        return

@@ -1,13 +1,15 @@
 import time
 import pickle
+import requests
 
 import login.config as config
 
 from tda.client import Client
 from login.client import client
 from functions.get_cash_available import get_cash_available
-from db.sqlite import insert_trade, get_trade
+from db.sqlite import insert_trade, get_trade, remove_trade
 from functions.sms import send
+import functions.settings as settings
 
 
 
@@ -15,7 +17,7 @@ from functions.sms import send
 def sell_by_trade(msg):
 
     ## SET DESIRED ROI
-    roi = 0.0035       #.   <<<<<<<<<<<<<<<<<<  <<<<< <    <<<        <<            <
+    roi = 0.005       #.   <<<<<<<<<<<<<<<<<<  <<<<< <    <<<        <<            <
     
     ## NOT SURE IF THIS HELPS -- LIMIT OF 120/min REQUESTS
     time.sleep(1)
@@ -24,14 +26,18 @@ def sell_by_trade(msg):
     profit = 1 + roi
 
     ## DESIRED LOSS PER TRADE
-    loss = 1 - (roi*0.25)
+    loss = 1 - (roi*0.4)
 
     #GET ACCOUNT WITH POSITIONS
     data = client.get_account(277582772,fields=Client.Account.Fields.POSITIONS)
     positions = data.json()
 
-
-
+    ## VISUALIZE HOW OFTEN CONDITION IS CHECKED
+    print('checking trades...')
+#     print(get_trade())
+    
+    
+    
     ## CHECK FOR POSITIONS OBJECT
     if 'securitiesAccount' in positions:
         if 'positions' in positions['securitiesAccount']:
@@ -49,12 +55,12 @@ def sell_by_trade(msg):
                 symbol = p['instrument']['symbol']
                 quantity = round(p['longQuantity'])
                 data['symbol'] = symbol
-
+                
+                    
+                    
+                    
                 # LOOP THROUGH DB TABLE 'Trades'
                 for t in get_trade():
-                    
-                    ## VISUALIZE HOW OFTEN CONDITION IS CHECKED
-                    print('checking trades...')
                     
                     
                     
@@ -62,7 +68,9 @@ def sell_by_trade(msg):
                     ## IF THE SYMBOL OF POSITION AND SYMBOL OF TRADES MATCH
                     if p['instrument']['symbol'] == t[1]:
                         # if last price <= trade price then sell for a loss
-                        
+                        buy_price = t[2]
+                        sell_up = buy_price * profit
+                        sell_down = buy_price * loss
                         
                         
                         
@@ -70,11 +78,12 @@ def sell_by_trade(msg):
                         
                         ##IF trade_price * loss LESS THAN EQUAL TO last_price
                         ## ['marketValue'] gives the MV of current position. Divide by quantity for unit market price
-                        if p['marketValue']/quantity <= t[2]*loss:
+                        if p['marketValue']/quantity <= sell_down:
                             
                             ## VISUALIZE THE LOSS
                             space = '                             '
-                            print(space,'...loss  q:{}  markVal:{}  lossVal:{}  tradeVal:{}'.format(quantity,t[2]*loss,t[2]))
+                            print(space,'...loss {}  q:{}  markVal:{}  lossVal:{}  tradeVal:{}'.format(symbol, round(t[3]),p['marketValue']/quantity,t[2]*loss,t[2]))
+
                             
                             ## SEND TEXT MESSAGE WITH LOSS INFO
                             data['WoL'] = 'Loss'
@@ -82,9 +91,10 @@ def sell_by_trade(msg):
                             
                             ## DEFINE THE MARKET SELL DURING NORMAL DAY HOURS
                             payload = {
-                              "orderType": "MARKET",
+                              "orderType": "LIMIT",
+                              "price":round(p['marketValue']/quantity,2),
                               "session": "NORMAL",
-                              "duration": "DAY",
+                              "duration": "GOOD_TILL_CANCEL",
                               "orderStrategyType": "TRIGGER",
                               "orderLegCollection": [
                                 {
@@ -102,12 +112,13 @@ def sell_by_trade(msg):
                             content = requests.post(url=config.endpoint, json=payload, headers=config.header)
                             
                             ## CHECK FOR TYPE OF RESPONSE
-#                             print(content.status_code)
+                            print(content.status_code)
 #                             print(content.raise_for_status())
 
 
                     ## add if response object is 201 then remove the trade
-                            remove_trade(t[0])
+                            if content.status_code == 201:
+                                remove_trade(t[0])
 
 
         
@@ -116,11 +127,11 @@ def sell_by_trade(msg):
             
                         ## IF last_price GREATER THAN EQUAL TO trade_price * profit
                         ## ['marketValue'] gives the MV of current position. Divide by quantity for unit market price
-                        if p['marketValue']/quantity <= t[2]*profit:
+                        if p['marketValue']/quantity >= sell_up:
                             
                             ## VISUALIZE THE PROFIT
                             space = '                             '
-                            print(space,'...money! q:{}  markVal:{}  gainVal:{}  tradeVal:{}'.format(quantity,t[2]*profit,t[2]))
+                            print(space,'...money! {} q:{}  markVal:{}  gainVal:{}  tradeVal:{}'.format(symbol, round(t[3]),p['marketValue']/quantity,t[2]*profit,t[2]))
                             
                             ## SEND TEXT MESSAGE WITH LOSS INFO
                             data['WoL'] = 'Profit'
@@ -128,9 +139,10 @@ def sell_by_trade(msg):
                             
                             ## DEFINE THE MARKET SELL DURING NORMAL DAY HOURS
                             payload = {
-                              "orderType": "MARKET",
+                              "orderType": "LIMIT",
                               "session": "NORMAL",
-                              "duration": "DAY",
+                              "duration": "GOOD_TILL_CANCEL",
+                              "price":round(sell_up,2),
                               "orderStrategyType": "TRIGGER",
                               "orderLegCollection": [
                                 {
@@ -148,12 +160,13 @@ def sell_by_trade(msg):
                             content = requests.post(url=config.endpoint, json=payload, headers=config.header)
                             
                             ## CHECK FOR TYPE OF RESPONSE
-#                             print(content.status_code)
+                            print(content.status_code)
 #                             print(content.raise_for_status())
 
 
                     ## add if response object is 201 then remove the trade
-                            remove_trade(t[0])
+                            if content.status_code == 201:
+                                remove_trade(t[0])
         
         
         

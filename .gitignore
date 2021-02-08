@@ -7,4 +7,8 @@ stream/10day/nov
 stream/stocks/
 stream/tweets/
 get-pip.py
-test.py
+chromedriver
+analysis.ipynb
+misc
+db/trades.db
+stream/handlers/find_then_sell.py
