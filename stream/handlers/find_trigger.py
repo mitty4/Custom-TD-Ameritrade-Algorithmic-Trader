@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 from math import floor
 
-from login.client import client
+from login.client import client, stream_client
 from tda.client import Client
 from functions.get_cash_available import get_cash_available
 from functions.get_hist_df import get_hist_df
@@ -16,6 +16,7 @@ import login.config as config
 import functions.settings as settings
 
 
+
 ## FIND TRIGGER AND POST A MARKET BUY THEN SEND TRADE TO DB
 def find_trigger(msg):
     
@@ -23,17 +24,20 @@ def find_trigger(msg):
     cash_available = get_cash_available(client, config)
     print(cash_available)
     
-    
+    ## WAIT A SECOND
+    time.sleep(0.8)
 
-    
+    ## DEFINE PROFIT
+    roi = 0.0005
+    profit = 1.00075 
+    my_buy = 1
     
     ## LOOP THROUGH THE CHOSEN TICKERS    
     for i,ticker in enumerate(msg['content']):     
 
             
-        # DEFINE SYMBOL
+        ## DEFINE SYMBOL
         symbol = ticker['key']
-        
         
         ## GET LIVE DF TO SEARCH FOR TRIGGERS
         live = pd.DataFrame.from_dict(ticker, orient="index").T 
@@ -73,7 +77,7 @@ def find_trigger(msg):
             
             
             ## SET AMOUNT OF $$ TO RISK, 1% of initial balance recommended
-            if cash_available >=25500:         # <<<<<<<<<<<< 
+            if cash_available >=24500:         # <<<<<<<<<<<< 
                 
                 
                 
@@ -94,6 +98,10 @@ def find_trigger(msg):
                     ## DING A SOUND ALERT
                     print('\a')              
 
+                    ## DEFINE PRICES
+                    buy_price = round(settings.myDict[symbol]*my_buy,2)
+                    sell_price = buy_price + 0.01
+                    
                     ## DEFINE THE ORDER SPECS FOR A MARKET BUY DURING NORMAL DAY
                     payload = {
                       "orderStrategyType": "TRIGGER",
@@ -110,6 +118,25 @@ def find_trigger(msg):
                           }
                         }
                       ],
+#                       "childOrderStrategies": [
+#                         {
+#                           "orderType": "LIMIT",
+#                           "session": "NORMAL",
+#                           "price": sell_price,
+#                           "duration": "DAY",
+#                           "orderStrategyType": "SINGLE",
+#                           "orderLegCollection": [
+#                             {
+#                               "instruction": "SELL",
+#                               "quantity": quantity,
+#                               "instrument": {
+#                                 "symbol": symbol,
+#                                 "assetType": "EQUITY"
+#                               }
+#                             }
+#                           ]
+#                         }
+#                       ]
                     }
                                    
 
@@ -129,13 +156,14 @@ def find_trigger(msg):
                         }
             
                     ## ADD TRADE TO DB
-                    insert_trade(trade)
+                    if content.status_code == 201:
+                        insert_trade(trade)
                     
                     ## CHECK FOR CASH AVAILABLE AFTER TRADE
                     cash_available_after = get_cash_available(client, config)
 
                     ## PRINT CASH DIFFERENCE AFTER TRADE
-                    print('from $'cash_available,' ---->> to $',cash_available_after)                    
+                    print('from $',cash_available,' ---->> to $',cash_available_after)                    
                     
                 
                 

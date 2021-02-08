@@ -13,3 +13,5 @@ client = easy_client(
 )
 
 stream_client = StreamClient(client, account_id=config.ACCOUNT_ID)
+
+stream_client2 = StreamClient(client, account_id=config.ACCOUNT_ID)

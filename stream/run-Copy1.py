@@ -5,10 +5,9 @@ from handlers.sell_by_trade import sell_by_trade
 from handlers.sell_all_positions import sell_all_positions
 from handlers.find_trigger import find_trigger
 from handlers.get_level_one import get_level_one
-from handlers.find_then_sell import find_then_sell
 
 from variables.tickers import tickers
-from login.client import stream_client, client
+from login.client import stream_client2, client
 import login.config as config
 
 import functions.settings as settings
@@ -26,20 +25,20 @@ async def read_stream():
 
     
 ### SETUP _____________________________________________________________    
-    await stream_client.login()
-    await stream_client.quality_of_service(StreamClient.QOSLevel.EXPRESS)
+    await stream_client2.login()
+    await stream_client2.quality_of_service(StreamClient.QOSLevel.EXPRESS)
     
     
 ### GET LEVEL ONE QUOTES specifically last_price ______________________
-    await stream_client.level_one_equity_subs(tickers)
-    stream_client.add_level_one_equity_handler(get_level_one)
+    await stream_client2.level_one_equity_subs(tickers)
+    stream_client2.add_level_one_equity_handler(get_level_one)
     
     
     
                     ######    ####    ### IMPORTANT TO SPECIFY #####
 ### SELL HOW????_______________________________________________________    
     ## by trade by intended ROI
-#     stream_client.add_level_one_equity_handler(sell_by_trade)   
+    stream_client2.add_level_one_equity_handler(sell_by_trade)   
     
     ## all positions at current price    
 #     stream_client.add_level_one_equity_handler(sell_all_positions)   
@@ -48,21 +47,15 @@ async def read_stream():
 
     
 # FIND TRIGGER ________________________________________________________
-    await stream_client.chart_equity_subs(tickers)
-    
-    ## find trigger based on condition and buy at market price
-#     stream_client.add_chart_equity_handler(find_trigger)
-
-    ## find trigger of rsi below 30 in first 15, buy with a trigger for sell limit
-    stream_client.add_chart_equity_handler(find_then_sell)
-    
+    await stream_client2.chart_equity_subs(tickers)
+    stream_client2.add_chart_equity_handler(find_trigger)
 
 
     
     
 
     while True:
-        await stream_client.handle_message()
+        await stream_client2.handle_message()
 
         
         
