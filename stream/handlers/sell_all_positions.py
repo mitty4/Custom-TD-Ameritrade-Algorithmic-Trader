@@ -4,6 +4,7 @@ from tda.client import Client
 from functions.sms import send
 import time
 import pickle
+import requests
 
 
 # this code will sell all the positions if the roi is at zero - dont forget to turn off the 'find_trigger' handler
@@ -23,7 +24,7 @@ def sell_all_positions(msg):
     loss = 1 - (roi*0.25)
 
     # GET ACCOUNT WITH POSITIONS
-    data = client.get_account(277582772,fields=Client.Account.Fields.POSITIONS)
+    data = client.get_account(config.ACCOUNT_ID,fields=Client.Account.Fields.POSITIONS)
     positions = data.json()
 
 
