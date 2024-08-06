@@ -1,3 +1,5 @@
+UPDATE: Charles Schwab acqioed TD Ameritrade in 2019. Doubting that they kept up with the existing APIs... would need to switch over to Schwab's API to get this working again.
+
 # Quant Trader
 Quant Trader using TD Ameritrade API
 
